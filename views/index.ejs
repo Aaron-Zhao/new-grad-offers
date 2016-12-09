@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="description" content="Search for popular names">
+        <meta name="keywords" content="name, baby name, popular name">
+        <meta name="author" content="Aaron Zhao">
+        <meta name="viewport" content="width=device-width" />
+        <title><%= title %></title>
+        <link rel="icon" href="/images/favicon.ico" type="image/vnd.microsoft.ico">
+        <link rel='stylesheet' href='/css/style.css' />
+        <script src="javascript/Chart.bundle.min.js"></script>
+    </head>
+    <body>
+        <canvas id="myChart" width="1000" height="400"></canvas>
+        <script>
+            var ctx = document.getElementById("myChart");
+            let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
+            let groupBy = 'Company Name';
+            let groups = {};
+            let counts = {};
+            let names = [];
+            let values = [];
+            let colors = [];
+
+            let data = <%- JSON.stringify(data_2016) %>;
+            console.log('Sample size: ' + data.length);   
+                     
+            for (let i = 1; i < data.length; i++) {
+                let value = +(data[i][field].replace('$','').replace(',',''));
+                let name = data[i][groupBy]
+                if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 150000) {
+                    if (groups.hasOwnProperty(name)) {
+                        counts[name]++;
+                        groups[name] += value;
+                    } else {
+                        counts[name] = 1;
+                        groups[name] = value;
+                    } 
+                }
+            }
+
+            for (let group in groups) {
+                let v = +((groups[group]/counts[group]).toFixed(0));
+                if (v > 85000) {
+                    names.push(group);
+                    values.push(+((groups[group]/counts[group]).toFixed(0)));
+                    colors.push('rgba(54, 162, 235, 0.2)');  
+                }              
+            }
+
+            console.log('Results: ' + values.length);
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        label: 'First Year Annualized Remuneration (including Signon & Relocation)',
+                        data: values,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero:true
+                            }
+                        }]
+                    }
+                }
+            });
+        </script>
+    </body>
+</html>

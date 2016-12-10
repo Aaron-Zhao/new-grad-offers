@@ -8,67 +8,96 @@
         <title><%= title %></title>
         <link rel="icon" href="/images/favicon.ico" type="image/vnd.microsoft.ico">
         <link rel='stylesheet' href='/css/style.css' />
-        <script src="javascript/Chart.bundle.min.js"></script>
     </head>
     <body>
+        <label for="year">Year</label>
+        <select id="year" name="year">
+            <option value="all">All</option>            
+            <option value="y2016">2016</option>
+            <option value="y2015">2015</option>
+        </select>
         <canvas id="myChart" width="1000" height="400"></canvas>
+        <script src="/javascript/Chart.bundle.min.js"></script>        
+        <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
+        <script src="/javascript/jquery.min.js"></script>
         <script>
-            var ctx = document.getElementById("myChart");
-            let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
-            let groupBy = 'Company Name';
-            let groups = {};
-            let counts = {};
-            let names = [];
-            let values = [];
-            let colors = [];
+            let _data_2016 = <%- JSON.stringify(data_2016) %>;
+            let _data_2015 = <%- JSON.stringify(data_2015) %>;
+            _data_2016.shift();
+            _data_2015.shift();
 
-            let data = <%- JSON.stringify(data_2016) %>;
-            console.log('Sample size: ' + data.length);   
-                     
-            for (let i = 1; i < data.length; i++) {
-                let value = +(data[i][field].replace('$','').replace(',',''));
-                let name = data[i][groupBy]
-                if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 150000) {
-                    if (groups.hasOwnProperty(name)) {
-                        counts[name]++;
-                        groups[name] += value;
-                    } else {
-                        counts[name] = 1;
-                        groups[name] = value;
-                    } 
-                }
-            }
+            $( document ).ready(function() {
+                $('#year').prop('selectedIndex', 0);
+                show(_data_2016.concat(_data_2015));
+            });
 
-            for (let group in groups) {
-                let v = +((groups[group]/counts[group]).toFixed(0));
-                if (v > 85000) {
-                    names.push(group);
-                    values.push(+((groups[group]/counts[group]).toFixed(0)));
-                    colors.push('rgba(54, 162, 235, 0.2)');  
-                }              
-            }
-
-            console.log('Results: ' + values.length);
-            var myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: names,
-                    datasets: [{
-                        label: 'First Year Annualized Remuneration (including Signon & Relocation)',
-                        data: values,
-                        backgroundColor: colors
-                    }]
-                },
-                options: {
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero:true
-                            }
-                        }]
-                    }
+            $('#year').on('change', function() {
+                $('#selectedValue').empty();
+                if ($(this).val() === 'all') {
+                    show(_data_2016.concat(_data_2015));
+                } else if ($(this).val() === 'y2016') {
+                    show(_data_2016);
+                } else if ($(this).val() === 'y2015') {
+                    show(_data_2016);                
                 }
             });
+
+            var ctx = document.getElementById("myChart");
+            
+            let show = function(data) {     
+                let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
+                let groupBy = 'Company Name';
+                let groups = {};
+                let counts = {};
+                let names = [];
+                let values = [];
+                let colors = [];
+
+                for (let i = 0; i < data.length; i++) {
+                    let value = +(data[i][field].replace('$','').replace(',',''));
+                    let name = data[i][groupBy]
+                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 150000) {
+                        if (groups.hasOwnProperty(name)) {
+                            counts[name]++;
+                            groups[name] += value;
+                        } else {
+                            counts[name] = 1;
+                            groups[name] = value;
+                        } 
+                    }
+                }
+
+                for (let group in groups) {
+                    let v = +((groups[group]/counts[group]).toFixed(0));
+                    if (v > 85000) {
+                        names.push(group);
+                        values.push(+((groups[group]/counts[group]).toFixed(0)));
+                        colors.push('rgba(54, 162, 235, 0.2)');  
+                    }              
+                }
+
+                console.log('Results: ' + values.length);
+                var myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: names,
+                        datasets: [{
+                            label: 'First Year Annualized Remuneration (including Signon & Relocation)',
+                            data: values,
+                            backgroundColor: colors
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero:true
+                                }
+                            }]
+                        }
+                    }
+                });
+            };
         </script>
     </body>
 </html>

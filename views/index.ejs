@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta name="description" content="Search for popular names">
-        <meta name="keywords" content="name, baby name, popular name">
+        <meta name="description" content="Tech New Graduate and Internship Offers">
+        <meta name="keywords" content="internship, job offer, new graduate jobs">
         <meta name="author" content="Aaron Zhao">
         <meta name="viewport" content="width=device-width" />
         <title><%= title %></title>
@@ -40,10 +40,10 @@
         </select>
         <h3>Data Samples: <span id="samples">0</span>, Results: <span id="results">0</span> companies, with a total of <span id="resultSamples">0</span> samples</h3>
         <canvas id="myChart" width="1000" height="400"></canvas>
-        <a href="/offers/2016">2016 Table View<a/><br>
-        <a href="/offers/2015">2015 Table View<a/>
+        <a href="https://docs.google.com/spreadsheets/d/1Km9bsx0SWPDiOPMYvremSDujyS5sF0ZQvbxr5S52wSA/edit?usp=sharing">2016 Table View<a/><br>
+        <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2015 Table View<a/>
         <h1>2014 Internship Offers</h1>
-        <a href="/offers/2014">2014 Table View<a/>
+        <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2014 Table View<a/>
         
         <script src="/javascript/Chart.bundle.min.js"></script>        
         <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
@@ -107,7 +107,7 @@
                 d3.select("#samples")
                 .transition()
                     .duration(1500)
-                    .on("start", function repeat() {
+                    .on("start", function () {
                     d3.active(this)
                         .tween("text", function() {
                             var that = d3.select(this),
@@ -120,7 +120,7 @@
                 d3.select("#results")
                 .transition()
                     .duration(1500)
-                    .on("start", function repeat() {
+                    .on("start", function () {
                     d3.active(this)
                         .tween("text", function() {
                             var that = d3.select(this),
@@ -133,7 +133,7 @@
                 d3.select("#resultSamples")
                 .transition()
                     .duration(1500)
-                    .on("start", function repeat() {
+                    .on("start", function () {
                     d3.active(this)
                         .tween("text", function() {
                             var that = d3.select(this),
@@ -154,7 +154,7 @@
                         },
                         {
                             label: 'Sample Size',
-                            data: countsArr
+                            data: countsArr,
                         }]
                     },
                     options: {

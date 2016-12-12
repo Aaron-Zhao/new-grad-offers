@@ -10,81 +10,151 @@
         <link rel='stylesheet' href='/css/style.css' />
     </head>
     <body>
+        <h1>Tech New Graduate and Internship Offers</h1>
         <label for="year">Year</label>
         <select id="year" name="year">
             <option value="all">All</option>            
             <option value="y2016">2016</option>
             <option value="y2015">2015</option>
         </select>
+        <label for="positionType">Position Type</label>
+        <select id="positionType" name="positionType">
+            <option value="all">All</option>                   
+            <option value="Full Time">Full-Time</option>            
+            <option value="Intern">Internship</option>
+        </select>
+        <br><br>
+        <label for="income">Income >=</label>
+        <select id="income" name="income">
+            <option value="100000">100K</option>                        
+            <option value="80000">80K</option>            
+            <option value="60000">60K</option>
+            <option value="40000">40K</option>
+        </select>
+        <label for="sampleSize">Sample Size >=</label>
+        <select id="sampleSize" name="sampleSize">
+            <option value="30">30</option>                   
+            <option value="10">10</option>            
+            <option value="5">5</option>
+            <option value="1">1</option>
+        </select>
+        <h3>Data Samples: <span id="samples">0</span>, Results: <span id="results">0</span> companies, with a total of <span id="resultSamples">0</span> samples</h3>
         <canvas id="myChart" width="1000" height="400"></canvas>
+        <a href="/offers/2016">2016 Table View<a/><br>
+        <a href="/offers/2015">2015 Table View<a/>
+        <h1>2014 Internship Offers</h1>
+        <a href="/offers/2014">2014 Table View<a/>
+        
         <script src="/javascript/Chart.bundle.min.js"></script>        
         <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
         <script src="/javascript/jquery.min.js"></script>
         <script>
-            let _data_2016 = <%- JSON.stringify(data_2016) %>;
-            let _data_2015 = <%- JSON.stringify(data_2015) %>;
+            var _data_2016 = <%- JSON.stringify(data_2016) %>;
+            var _data_2015 = <%- JSON.stringify(data_2015) %>;           
             _data_2016.shift();
             _data_2015.shift();
 
-            $( document ).ready(function() {
-                $('#year').prop('selectedIndex', 0);
-                show(_data_2016.concat(_data_2015));
-            });
-
-            $('#year').on('change', function() {
-                $('#selectedValue').empty();
-                if ($(this).val() === 'all') {
-                    show(_data_2016.concat(_data_2015));
-                } else if ($(this).val() === 'y2016') {
-                    show(_data_2016);
-                } else if ($(this).val() === 'y2015') {
-                    show(_data_2016);                
-                }
-            });
-
             var ctx = document.getElementById("myChart");
-            
-            let show = function(data) {     
+            var myChart;
+
+            let show = function(data, position, income, sz) {  
+                if (myChart !== null && myChart !== undefined) {
+                    myChart.destroy();
+                }   
                 let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
+                let field2 = 'Position Type';
                 let groupBy = 'Company Name';
                 let groups = {};
                 let counts = {};
                 let names = [];
                 let values = [];
                 let colors = [];
+                let countsArr = [];
+                let sampleSize = 0;
+                let resultSampleSize = 0;
 
                 for (let i = 0; i < data.length; i++) {
                     let value = +(data[i][field].replace('$','').replace(',',''));
-                    let name = data[i][groupBy]
-                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 150000) {
-                        if (groups.hasOwnProperty(name)) {
-                            counts[name]++;
-                            groups[name] += value;
-                        } else {
-                            counts[name] = 1;
-                            groups[name] = value;
-                        } 
+                    let name = data[i][groupBy];
+                    //filter out some invalid and edge cases consedering a set of data this small
+                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 200000) {         
+                        if (data[i][field2] === position || position === 'all') {
+                            sampleSize++;
+                            if (groups.hasOwnProperty(name)) {
+                                counts[name]++;
+                                groups[name] += value;
+                            } else {
+                                counts[name] = 1;
+                                groups[name] = value;
+                            } 
+                        }
                     }
                 }
 
                 for (let group in groups) {
                     let v = +((groups[group]/counts[group]).toFixed(0));
-                    if (v > 85000) {
+                    if (v >= income && counts[group] >= sz) {
                         names.push(group);
                         values.push(+((groups[group]/counts[group]).toFixed(0)));
+                        countsArr.push(counts[group]);
+                        resultSampleSize += counts[group];
                         colors.push('rgba(54, 162, 235, 0.2)');  
                     }              
                 }
 
-                console.log('Results: ' + values.length);
-                var myChart = new Chart(ctx, {
+                let format = d3.format(",d");
+
+                d3.select("#samples")
+                .transition()
+                    .duration(1500)
+                    .on("start", function repeat() {
+                    d3.active(this)
+                        .tween("text", function() {
+                            var that = d3.select(this),
+                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), sampleSize);
+                            return function(t) { that.text(format(i(t))); };
+                        })
+                        .transition()
+                    });
+
+                d3.select("#results")
+                .transition()
+                    .duration(1500)
+                    .on("start", function repeat() {
+                    d3.active(this)
+                        .tween("text", function() {
+                            var that = d3.select(this),
+                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), values.length);
+                            return function(t) { that.text(format(i(t))); };
+                        })
+                        .transition()
+                    });
+
+                d3.select("#resultSamples")
+                .transition()
+                    .duration(1500)
+                    .on("start", function repeat() {
+                    d3.active(this)
+                        .tween("text", function() {
+                            var that = d3.select(this),
+                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), resultSampleSize);
+                            return function(t) { that.text(format(i(t))); };
+                        })
+                        .transition()
+                    });
+
+                myChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: names,
                         datasets: [{
-                            label: 'First Year Annualized Remuneration (including Signon & Relocation)',
+                            label: 'Average First Year Annualized Remuneration',
                             data: values,
                             backgroundColor: colors
+                        },
+                        {
+                            label: 'Sample Size',
+                            data: countsArr
                         }]
                     },
                     options: {
@@ -94,10 +164,37 @@
                                     beginAtZero:true
                                 }
                             }]
+                        },
+                        tooltips: {
+                            mode: 'label'
                         }
                     }
                 });
             };
+
+            let updateChart = function() {
+                if ($('#year').val() === 'all') {
+                    show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
+                } else if ($('#year').val() === 'y2016') {
+                    show(_data_2016, $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
+                } else if ($('#year').val() === 'y2015') {
+                    show(_data_2015, $('#positionType').val(), $('#income').val(), $('#sampleSize').val());                
+                } 
+            };
+
+            $('#year').on('change', updateChart);
+            $('#positionType').on('change', updateChart);                        
+            $('#income').on('change', updateChart);
+            $('#sampleSize').on('change', updateChart);
+
+            $(document).ready(function() {
+                $('#year').prop('selectedIndex', 0);
+                $('#positionType').prop('selectedIndex', 0);                               
+                $('#income').prop('selectedIndex', 1);   
+                $('#sampleSize').prop('selectedIndex', 2);    
+                           
+                show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
+            });
         </script>
     </body>
 </html>

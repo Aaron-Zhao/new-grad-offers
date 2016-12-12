@@ -39,11 +39,9 @@
             <option value="1">1</option>
         </select>
         <h3>Data Samples: <span id="samples">0</span>, Results: <span id="results">0</span> companies, with a total of <span id="resultSamples">0</span> samples</h3>
-        <canvas id="myChart" width="1000" height="400"></canvas>
+        <canvas id="myChart" width="10" height="3"></canvas>
         <a href="https://docs.google.com/spreadsheets/d/1Km9bsx0SWPDiOPMYvremSDujyS5sF0ZQvbxr5S52wSA/edit?usp=sharing">2016 Table View<a/><br>
-        <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2015 Table View<a/>
-        <h1>2014 Internship Offers</h1>
-        <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2014 Table View<a/>
+        <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2014-2015 Table View<a/>
         
         <script src="/javascript/Chart.bundle.min.js"></script>        
         <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
@@ -65,83 +63,62 @@
                 let field2 = 'Position Type';
                 let groupBy = 'Company Name';
                 let groups = {};
-                let counts = {};
-                let names = [];
-                let values = [];
-                let colors = [];
-                let countsArr = [];
                 let sampleSize = 0;
                 let resultSampleSize = 0;
 
+                //group by
                 for (let i = 0; i < data.length; i++) {
                     let value = +(data[i][field].replace('$','').replace(',',''));
                     let name = data[i][groupBy];
                     //filter out some invalid and edge cases consedering a set of data this small
-                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value < 200000) {         
+                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value <= 200000) {         
                         if (data[i][field2] === position || position === 'all') {
                             sampleSize++;
                             if (groups.hasOwnProperty(name)) {
-                                counts[name]++;
-                                groups[name] += value;
+                                groups[name]['count']++;
+                                groups[name]['value'] += value;
                             } else {
-                                counts[name] = 1;
-                                groups[name] = value;
+                                groups[name] = {};
+                                groups[name]['count'] = 1;
+                                groups[name]['value'] = value;
                             } 
                         }
                     }
                 }
 
+                //filter
                 for (let group in groups) {
-                    let v = +((groups[group]/counts[group]).toFixed(0));
-                    if (v >= income && counts[group] >= sz) {
-                        names.push(group);
-                        values.push(+((groups[group]/counts[group]).toFixed(0)));
-                        countsArr.push(counts[group]);
-                        resultSampleSize += counts[group];
-                        colors.push('rgba(54, 162, 235, 0.2)');  
-                    }              
+                    let c = groups[group]['count'];
+                    let v = +((groups[group]['value']/c).toFixed(0));
+                    if (v >= income && c >= sz) {
+                        groups[group]['value'] = v;   
+                        resultSampleSize += c;
+                    } else {
+                        delete groups[group];
+                    }             
                 }
 
+                let names = Object.keys(groups);
+                let values = Object.keys(groups).map(function(i) { return groups[i]['value']; });
+                let counts = Object.keys(groups).map(function(i) { return groups[i]['count']; });
                 let format = d3.format(",d");
-
-                d3.select("#samples")
-                .transition()
-                    .duration(1500)
-                    .on("start", function () {
-                    d3.active(this)
-                        .tween("text", function() {
-                            var that = d3.select(this),
-                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), sampleSize);
-                            return function(t) { that.text(format(i(t))); };
-                        })
-                        .transition()
-                    });
-
-                d3.select("#results")
-                .transition()
-                    .duration(1500)
-                    .on("start", function () {
-                    d3.active(this)
-                        .tween("text", function() {
-                            var that = d3.select(this),
-                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), values.length);
-                            return function(t) { that.text(format(i(t))); };
-                        })
-                        .transition()
-                    });
-
-                d3.select("#resultSamples")
-                .transition()
-                    .duration(1500)
-                    .on("start", function () {
-                    d3.active(this)
-                        .tween("text", function() {
-                            var that = d3.select(this),
-                                i = d3.interpolateNumber(that.text().replace(/,/g, ""), resultSampleSize);
-                            return function(t) { that.text(format(i(t))); };
-                        })
-                        .transition()
-                    });
+                let formatter = function(id, value) {
+                    d3.select(id)
+                    .transition()
+                        .duration(1500)
+                        .on("start", function () {
+                        d3.active(this)
+                            .tween("text", function() {
+                                var that = d3.select(this),
+                                    i = d3.interpolateNumber(that.text().replace(/,/g, ""), value);
+                                return function(t) { that.text(format(i(t))); };
+                            })
+                            .transition()
+                        });
+                }
+                formatter("#samples", sampleSize);
+                formatter("#results", names.length);
+                formatter("#resultSamples", resultSampleSize);
 
                 myChart = new Chart(ctx, {
                     type: 'bar',
@@ -150,11 +127,12 @@
                         datasets: [{
                             label: 'Average First Year Annualized Remuneration',
                             data: values,
-                            backgroundColor: colors
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)'
                         },
                         {
                             label: 'Sample Size',
-                            data: countsArr,
+                            data: counts,
+                            backgroundColor: 'rgba(235, 164, 54, 0.2)'
                         }]
                     },
                     options: {
@@ -173,13 +151,14 @@
             };
 
             let updateChart = function() {
-                if ($('#year').val() === 'all') {
-                    show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
-                } else if ($('#year').val() === 'y2016') {
-                    show(_data_2016, $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
-                } else if ($('#year').val() === 'y2015') {
-                    show(_data_2015, $('#positionType').val(), $('#income').val(), $('#sampleSize').val());                
-                } 
+                switch ($('#year').val()) {
+                    case 'all':
+                        show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
+                    case 'y2016':   
+                        show(_data_2016, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
+                    case 'y2015':
+                        show(_data_2015, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;                                      
+                }
             };
 
             $('#year').on('change', updateChart);
@@ -192,7 +171,6 @@
                 $('#positionType').prop('selectedIndex', 0);                               
                 $('#income').prop('selectedIndex', 1);   
                 $('#sampleSize').prop('selectedIndex', 2);    
-                           
                 show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
             });
         </script>

@@ -46,132 +46,136 @@
         <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
         <script src="/javascript/jquery.min.js"></script>
         <script>
-            var _data_2016 = <%- JSON.stringify(data_2016) %>;
-            var _data_2015 = <%- JSON.stringify(data_2015) %>;           
-            _data_2016.shift();
-            _data_2015.shift();
+            $.get('/data_2015.json', function(_data_2015) {
+                $.get('/data_2016.json', function(_data_2016) {
+                    _data_2016.shift();
+                    _data_2015.shift();
 
-            var ctx = document.getElementById("myChart");
-            var myChart;
+                    var ctx = document.getElementById("myChart");
+                    var myChart;
 
-            let show = function(data, position, income, sz) {  
-                if (myChart !== null && myChart !== undefined) {
-                    myChart.destroy();
-                }   
-                let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
-                let field2 = 'Position Type';
-                let groupBy = 'Company Name';
-                let groups = {};
-                let sampleSize = 0;
-                let resultSampleSize = 0;
+                    let show = function(data, position, income, sz) {  
+                        if (myChart !== null && myChart !== undefined) {
+                            myChart.destroy();
+                        }   
+                        let field = 'Total First Year Annualized Renumeration(including Signon & Relocation)';
+                        let field2 = 'Position Type';
+                        let groupBy = 'Company Name';
+                        let groups = {};
+                        let sampleSize = 0;
+                        let resultSampleSize = 0;
 
-                //group by
-                for (let i = 0; i < data.length; i++) {
-                    let value = +(data[i][field].replace('$','').replace(',',''));
-                    let name = data[i][groupBy];
-                    //filter out some invalid and edge cases consedering a set of data this small
-                    if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value <= 200000) {         
-                        if (data[i][field2] === position || position === 'all') {
-                            sampleSize++;
-                            if (groups.hasOwnProperty(name)) {
-                                groups[name]['count']++;
-                                groups[name]['value'] += value;
-                            } else {
-                                groups[name] = {};
-                                groups[name]['count'] = 1;
-                                groups[name]['value'] = value;
-                            } 
-                        }
-                    }
-                }
-
-                //filter
-                for (let group in groups) {
-                    let c = groups[group]['count'];
-                    let v = +((groups[group]['value']/c).toFixed(0));
-                    if (v >= income && c >= sz) {
-                        groups[group]['value'] = v;   
-                        resultSampleSize += c;
-                    } else {
-                        delete groups[group];
-                    }             
-                }
-
-                let names = Object.keys(groups);
-                let values = Object.keys(groups).map(function(i) { return groups[i]['value']; });
-                let counts = Object.keys(groups).map(function(i) { return groups[i]['count']; });
-                let format = d3.format(",d");
-                let formatter = function(id, value) {
-                    d3.select(id)
-                    .transition()
-                        .duration(1500)
-                        .on("start", function () {
-                        d3.active(this)
-                            .tween("text", function() {
-                                var that = d3.select(this),
-                                    i = d3.interpolateNumber(that.text().replace(/,/g, ""), value);
-                                return function(t) { that.text(format(i(t))); };
-                            })
-                            .transition()
-                        });
-                }
-                formatter("#samples", sampleSize);
-                formatter("#results", names.length);
-                formatter("#resultSamples", resultSampleSize);
-
-                myChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: names,
-                        datasets: [{
-                            label: 'Average First Year Annualized Remuneration',
-                            data: values,
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)'
-                        },
-                        {
-                            label: 'Sample Size',
-                            data: counts,
-                            backgroundColor: 'rgba(235, 164, 54, 0.2)'
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero:true
+                        //group by
+                        for (let i = 0; i < data.length; i++) {
+                            let value = +(data[i][field].replace('$','').replace(',',''));
+                            let name = data[i][groupBy];
+                            //filter out some invalid and edge cases consedering a set of data this small
+                            if (name.match(/^[0-9A-Za-z'-]+(?:\s[0-9A-Za-z'-]+)*$/) && value <= 200000) {         
+                                if (data[i][field2] === position || position === 'all') {
+                                    sampleSize++;
+                                    if (groups.hasOwnProperty(name)) {
+                                        groups[name]['count']++;
+                                        groups[name]['value'] += value;
+                                    } else {
+                                        groups[name] = {};
+                                        groups[name]['count'] = 1;
+                                        groups[name]['value'] = value;
+                                    } 
                                 }
-                            }]
-                        },
-                        tooltips: {
-                            mode: 'label'
+                            }
                         }
-                    }
-                });
-            };
 
-            let updateChart = function() {
-                switch ($('#year').val()) {
-                    case 'all':
-                        show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
-                    case 'y2016':   
-                        show(_data_2016, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
-                    case 'y2015':
-                        show(_data_2015, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;                                      
-                }
-            };
+                        //filter
+                        for (let group in groups) {
+                            let c = groups[group]['count'];
+                            let v = +((groups[group]['value']/c).toFixed(0));
+                            if (v >= income && c >= sz) {
+                                groups[group]['value'] = v;   
+                                resultSampleSize += c;
+                            } else {
+                                delete groups[group];
+                            }             
+                        }
 
-            $('#year').on('change', updateChart);
-            $('#positionType').on('change', updateChart);                        
-            $('#income').on('change', updateChart);
-            $('#sampleSize').on('change', updateChart);
+                        let names = Object.keys(groups);
+                        let values = Object.keys(groups).map(function(i) { return groups[i]['value']; });
+                        let counts = Object.keys(groups).map(function(i) { return groups[i]['count']; });
+                        let format = d3.format(",d");
+                        let formatter = function(id, value) {
+                            d3.select(id)
+                            .transition()
+                                .duration(1500)
+                                .on("start", function () {
+                                d3.active(this)
+                                    .tween("text", function() {
+                                        var that = d3.select(this),
+                                            i = d3.interpolateNumber(that.text().replace(/,/g, ""), value);
+                                        return function(t) { that.text(format(i(t))); };
+                                    })
+                                    .transition()
+                                });
+                        }
+                        formatter("#samples", sampleSize);
+                        formatter("#results", names.length);
+                        formatter("#resultSamples", resultSampleSize);
 
-            $(document).ready(function() {
-                $('#year').prop('selectedIndex', 0);
-                $('#positionType').prop('selectedIndex', 0);                               
-                $('#income').prop('selectedIndex', 1);   
-                $('#sampleSize').prop('selectedIndex', 2);    
-                show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
+                        myChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: names,
+                                datasets: [{
+                                    label: 'Average First Year Annualized Remuneration',
+                                    data: values,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)'
+                                },
+                                {
+                                    label: 'Sample Size',
+                                    data: counts,
+                                    backgroundColor: 'rgba(235, 164, 54, 0.2)'
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    yAxes: [{
+                                        ticks: {
+                                            beginAtZero:true
+                                        }
+                                    }]
+                                },
+                                tooltips: {
+                                    mode: 'label'
+                                }
+                            }
+                        });
+                    };
+
+                    let updateChart = function() {
+                        switch ($('#year').val()) {
+                            case 'all':
+                                show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
+                            case 'y2016':   
+                                show(_data_2016, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;
+                            case 'y2015':
+                                show(_data_2015, $('#positionType').val(), $('#income').val(), $('#sampleSize').val()); break;                                      
+                        }
+                    };
+
+                    $('#year').on('change', updateChart);
+                    $('#positionType').on('change', updateChart);                        
+                    $('#income').on('change', updateChart);
+                    $('#sampleSize').on('change', updateChart);
+
+                    $(document).ready(function() {
+                        $('#year').prop('selectedIndex', 0);
+                        $('#positionType').prop('selectedIndex', 0);                               
+                        $('#income').prop('selectedIndex', 1);   
+                        $('#sampleSize').prop('selectedIndex', 2);    
+                        show(_data_2016.concat(_data_2015), $('#positionType').val(), $('#income').val(), $('#sampleSize').val());
+                    });
+                });                
             });
+
+            
         </script>
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){

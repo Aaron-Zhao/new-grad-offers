@@ -39,6 +39,16 @@
             <option value="1">1</option>
         </select>
         <h3>Data Samples: <span id="samples">0</span>, Results: <span id="results">0</span> companies, with a total of <span id="resultSamples">0</span> samples</h3>
+        <div id="loader2" class="cs-loader">
+            <div class="cs-loader-inner">
+                <label>	●</label>
+                <label>	●</label>
+                <label>	●</label>
+                <label>	●</label>
+                <label>	●</label>
+                <label>	●</label>
+            </div>
+        </div>
         <canvas id="myChart" width="10" height="3"></canvas>
         <a href="https://docs.google.com/spreadsheets/d/1Km9bsx0SWPDiOPMYvremSDujyS5sF0ZQvbxr5S52wSA/edit?usp=sharing">2016 Table View<a/><br>
         <a href="https://docs.google.com/spreadsheets/d/1UnLz40Our1Ids-O0sz26uPNCF6cQjwosrZQY4VLdflU/edit?usp=sharing">2014-2015 Table View<a/>
@@ -47,8 +57,10 @@
         <script src="/javascript/d3.v4.0.0-alpha.23.min.js"></script>
         <script src="/javascript/jquery.min.js"></script>
         <script>
+            $('#loader2').animate({opacity: 1.0}, "fast");
             $.get('/data_2015.json', function(_data_2015) {
                 $.get('/data_2016.json', function(_data_2016) {
+                    $('#loader2').animate({opacity: 0.0}, "slow");
                     _data_2016.shift();
                     _data_2015.shift();
 
